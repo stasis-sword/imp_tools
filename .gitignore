@@ -1,0 +1,11 @@
+# Project local files
+config.ini
+/trophy_timestamps.json
+
+# Local env
+.venv/
+.vscode
+__pycache__/
+scratch.py
+.idea/
+.coverage
