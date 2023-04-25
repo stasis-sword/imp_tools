@@ -19,22 +19,19 @@ def get_izgc_master_trophy_dict(session):
     soup = BeautifulSoup(response.text, "html.parser")
 
     trophies = soup.find_all("div", attrs={
-        'class': re.compile('^item-trophy tooltip.*')})
+        'class': re.compile('^item-trophy tooltip( plat)?')})
     for trophy in trophies:
-        try:
-            trophy_info_strings = tuple(trophy.stripped_strings)
-            game = trophy_info_strings[1]
-            name = trophy_info_strings[0]
-            trophy_data = {
-                "full_name": f"[{game}] {name}",
-                "game": game,
-                "name": name,
-                "system_year": trophy_info_strings[2]
-            }
-            master_trophy_dict[trophy["imgur_id"]] = trophy_data
-        except KeyError:
-            # No imgur id present, so we don't scan for it
-            continue
+        trophy_info_strings = tuple(trophy.stripped_strings)
+        image_path = trophy.find('img')['src']
+        game = trophy_info_strings[1]
+        name = trophy_info_strings[0]
+        trophy_data = {
+            "full_name": f"[{game}] {name}",
+            "game": game,
+            "name": name,
+            "system_year": trophy_info_strings[2]
+        }
+        master_trophy_dict[image_path] = trophy_data
 
     return master_trophy_dict
 
@@ -118,8 +115,8 @@ class IZGCThread(Thread):
         earned_trophies = {}
         images = post.image_urls()
         for image in images:
-            for trophy_id, trophy_data in self.eligible_trophies.items():
-                if re.search(f"i.imgur.com/{trophy_id}", image):
+            for trophy_path, trophy_data in self.eligible_trophies.items():
+                if re.search(trophy_path, image):
                     new_trophy = {trophy_data["game"]: {
                         trophy_data["name"]: {
                             "timestamp": post.timestamp(),
