@@ -1,6 +1,7 @@
 # Project local files
 config.ini
 /trophy_timestamps.json
+service_account.json
 
 # Local env
 .venv/
