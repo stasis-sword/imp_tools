@@ -18,7 +18,10 @@ only visible to your local machine and the SA forums, never sent anywhere
     it will mark the first post as last read.
   - Logging in is necessary for any utility which accesses a thread that is 
     paywalled.
-- If you are going to use a utility that accesses the IZGC Firebase DB, (todo: instructions here for setting up db auth)
+- If you are going to use a utility that accesses the IZGC Firebase DB, you'll
+need to [generate a service account key](https://cloud.google.com/docs/authentication/provide-credentials-adc#local-key). 
+Put the resulting JSON file in the `imp_tools` directory and rename it to 
+`service_account.json`.
 
 ---
 
