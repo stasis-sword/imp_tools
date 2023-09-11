@@ -73,6 +73,12 @@ class TrophyReporter:
 
         print("\n******** NEW TROPHIES ********")
         for imp, trophies in self.imp_trophies.items():
+            fb_handler.write_trophies_to_db(imp, trophies)
+            # ugly gross way to remove db references, for now
+            for game, game_trophies in trophies.items():
+                for _game_trophy, data in game_trophies.items():
+                    del data["reference"]
+
             if imp not in self.trophy_log:
                 new_member_string = " (New Club member!)"
                 self.trophy_log[imp] = trophies
@@ -124,7 +130,8 @@ class IZGCThread(Thread):
                     new_trophy = {trophy_data["game"]: {
                         trophy_data["name"]: {
                             "timestamp": post.timestamp(),
-                            "link": post.link()
+                            "link": post.link(),
+                            "reference": trophy_data["reference"]
                         }}}
                     update_trophy_dict(earned_trophies, new_trophy)
 

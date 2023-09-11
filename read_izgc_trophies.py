@@ -14,9 +14,7 @@ class InvalidArgumentError(Exception):
 
 # Accept command line argument to read all pages
 if "--all-pages" not in sys.argv:
-    # club_thread.load_previous_stopping_point()
-    club_thread.page_number = 348
-    club_thread.last_post = 0
+    club_thread.load_previous_stopping_point()
 if len(sys.argv) > 1:
     if sys.argv[1] == "--start-page":
         USAGE_MESSAGE = "Usage: read_izgc_trophies --start-page {page number}"

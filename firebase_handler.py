@@ -4,6 +4,15 @@ import pytz
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
+from google.cloud.firestore_v1.base_query import FieldFilter
+
+
+class DbWarning(Warning):
+    pass
+
+
+class DbError(Exception):
+    pass
 
 
 class FirebaseHandler:
@@ -32,9 +41,9 @@ class FirebaseHandler:
                 name = trophy_doc.id
                 image_url = trophy_doc.to_dict()['imageUrl']
                 trophy_data = {
-                    'full_name': f"[{game}] {name}",
                     "game": game,
-                    "name": name
+                    "name": name,
+                    'reference': trophy_doc.reference
                 }
                 trophy_dict[image_url] = trophy_data
 
@@ -49,5 +58,39 @@ class FirebaseHandler:
 
         return trophy_dict
 
-    def write_trophies_to_db(self):
-        pass
+    def get_imp_by_username(self, imp):
+        imp_ref = self.db_client.document(f'imps/{imp}')
+        imp_doc = imp_ref.get()
+        if not imp_doc.exists:
+            query = self.db_client.collection('imps').where(filter=FieldFilter(
+                "currentUsername", "==", imp))
+            imps_with_name = []
+            for doc in query.stream():
+                imps_with_name.append(doc)
+            if len(imps_with_name) < 1:
+                print(f'Warning: could not find {imp} in database.' +
+                      ' If this is not a new club member, there ' +
+                      'may be something wrong. Creating new record.')
+                imp_ref.set({})
+            elif len(imps_with_name) > 1:
+                raise DbError(f'Imp lookup for {imp} failed! Multiple ' +
+                              'records found with this as currentUsername.')
+            else:
+                imp_ref = imps_with_name[0].reference
+
+        return imp_ref
+
+    def write_trophies_to_db(self, imp, trophies):
+        imp_ref = self.get_imp_by_username(imp)
+        for game, trophy in trophies.items():
+            for trophy_name, trophy_data in trophy.items():
+                trophy_ref = self.db_client.document(
+                    imp_ref.path +
+                    f'/trophies{self.year}/[{game}] {trophy_name}'
+                )
+                trophy_ref.set({
+                    'trophy': trophy_data['reference'],
+                    'postUrl': trophy_data['link'],
+                    'timestamp': datetime.strptime(
+                        trophy_data['timestamp'], "%b %d, %Y %H:%M")
+                })
