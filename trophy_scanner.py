@@ -6,8 +6,13 @@ import re
 from bs4 import BeautifulSoup
 
 from thread_reader import Thread
+from firebase_handler import FirebaseHandler
 
 
+fb_handler = FirebaseHandler()
+
+
+# now deprecated, instead reading trophy data from firebase db
 def get_izgc_master_trophy_dict(session):
     # This should probably be in a config file, but I'm not putting it
     # there just so it's a little less visible to casual perusal.
@@ -92,8 +97,7 @@ class IZGCThread(Thread):
             dispatcher=dispatcher,
             thread_id=dispatcher.config["DEFAULT"]["izgc_thread_id"]
         )
-        self.eligible_trophies = get_izgc_master_trophy_dict(
-            self.dispatcher.session)
+        self.eligible_trophies = fb_handler.get_trophy_dict_from_db()
 
     def trophy_scan(self):
         imp_trophies = {}

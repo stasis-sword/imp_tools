@@ -6,16 +6,16 @@ from firebase_admin import credentials
 
 from bs4 import BeautifulSoup
 
-sesh = requests.Session()
+# requests
+session = requests.Session()
 
+# firebase
 cred = credentials.Certificate('service_account.json')
-
 app = firebase_admin.initialize_app(cred)
-
 db = firestore.client()
 
 
-def get_trophy_dict(session):
+def get_trophy_dict():
     # This should probably be in a config file, but I'm not putting it
     # there just so it's a little less visible to casual perusal.
     izgc_trophy_list_url = "https://impzone.club/alltrophies.html"
@@ -102,6 +102,6 @@ def add_new_trophy(image_url, game, name, plat, secret):
 
 
 if __name__ == "__main__":
-    dicty = get_trophy_dict(sesh)
+    dicty = get_trophy_dict()
     for new_trophy in dicty.items():
         add_new_trophy(**new_trophy[1])
