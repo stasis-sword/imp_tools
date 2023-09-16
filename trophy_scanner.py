@@ -2,12 +2,13 @@
 
 import json
 import re
+from datetime import datetime
 
+import pytz
 from bs4 import BeautifulSoup
 
 from thread_reader import Thread
 from firebase_handler import FirebaseHandler
-
 
 fb_handler = FirebaseHandler()
 
@@ -124,15 +125,25 @@ class IZGCThread(Thread):
     def get_post_trophies(self, post):
         earned_trophies = {}
         images = post.image_urls()
+        post_timestamp = post.timestamp()
+        parsed_timestamp = datetime.strptime(
+            post_timestamp, "%b %d, %Y %H:%M").astimezone(pytz.timezone('utc'))
         for image in images:
             for trophy_path, trophy_data in self.eligible_trophies.items():
                 if re.search(trophy_path, image):
+                    within_time_window = (trophy_data['start_time'] <
+                                          parsed_timestamp <
+                                          trophy_data['end_time'])
+                    if not within_time_window:
+                        continue
+
                     new_trophy = {trophy_data["game"]: {
                         trophy_data["name"]: {
-                            "timestamp": post.timestamp(),
+                            "timestamp": post_timestamp,
                             "link": post.link(),
                             "reference": trophy_data["reference"]
                         }}}
+
                     update_trophy_dict(earned_trophies, new_trophy)
 
         return earned_trophies

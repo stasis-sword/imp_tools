@@ -1,10 +1,12 @@
 from datetime import datetime
-import pytz
 
+import pytz
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
 from google.cloud.firestore_v1.base_query import FieldFilter
+
+CLUB_TIMEZONE = pytz.timezone('US/Eastern')
 
 
 class DbWarning(Warning):
@@ -15,22 +17,25 @@ class DbError(Exception):
     pass
 
 
+def new_year_datetime(year):
+    naive = datetime(year, 1, 1)
+    localized = CLUB_TIMEZONE.localize(naive)
+    utc = localized.astimezone(pytz.timezone('utc'))
+    return utc
+
+
 class FirebaseHandler:
     def __init__(self):
         cred = credentials.Certificate('service_account.json')
         firebase_admin.initialize_app(cred)
         self.db_client = firestore.client()
         # this could cause a problem if run right after the year ends...
-        self.year = datetime.now().astimezone(pytz.timezone('US/Eastern')).year
+        self.year = datetime.now().astimezone(CLUB_TIMEZONE).year
 
     def get_time_window(self, game_or_event_doc):
         properties = game_or_event_doc.to_dict()
-        default_start_time = datetime(
-            self.year, 1, 1, 0, 0, 0, 0
-        ).astimezone(pytz.timezone('US/Eastern'))
-        default_end_time = datetime(
-            self.year + 1, 1, 1, 0, 0, 0, 0
-        ).astimezone(pytz.timezone('US/Eastern'))
+        default_start_time = new_year_datetime(self.year)
+        default_end_time = new_year_datetime(self.year + 1)
 
         if properties.get('startTime') and properties.get('endTime'):
             start_time = properties['startTime']
