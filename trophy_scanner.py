@@ -5,41 +5,11 @@ import re
 from datetime import datetime
 
 import pytz
-from bs4 import BeautifulSoup
 
 from thread_reader import Thread
 from firebase_handler import FirebaseHandler
 
 fb_handler = FirebaseHandler()
-
-
-# now deprecated, instead reading trophy data from firebase db
-def get_izgc_master_trophy_dict(session):
-    # This should probably be in a config file, but I'm not putting it
-    # there just so it's a little less visible to casual perusal.
-    izgc_trophy_list_url = "https://impzone.club/alltrophies.html"
-    master_trophy_dict = {}
-
-    # Could modularize this, but it's YAGNI for now
-    response = session.get(izgc_trophy_list_url)
-    soup = BeautifulSoup(response.text, "html.parser")
-
-    trophies = soup.find_all("div", attrs={
-        'class': re.compile('^item-trophy tooltip( plat)?')})
-    for trophy in trophies:
-        trophy_info_strings = tuple(trophy.stripped_strings)
-        image_path = trophy.find('img')['src']
-        game = trophy_info_strings[1]
-        name = trophy_info_strings[0]
-        trophy_data = {
-            "full_name": f"[{game}] {name}",
-            "game": game,
-            "name": name,
-            "system_year": trophy_info_strings[2]
-        }
-        master_trophy_dict[image_path] = trophy_data
-
-    return master_trophy_dict
 
 
 def update_trophy_dict(existing_trophies, new_trophies):
