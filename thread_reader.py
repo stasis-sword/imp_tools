@@ -27,6 +27,7 @@ class Thread:
         self.page_number = 1
         self.last_post = 0
         self.name = self.get_name()
+        self.set_last_read()
 
     def load_previous_stopping_point(self):
         try:
@@ -35,10 +36,18 @@ class Thread:
             self.last_post = int(thread_attrs["last_post"])
         except KeyError:
             print("No previous endpoint of thread in config. Saving new end.")
-            self.page_number = self.get_last_page_number()
-            self.last_post = self.get_last_post()
-            self.set_last_read()
+            self.load_end_of_thread()
             self.update_config_values()
+
+    def load_end_of_thread(self):
+        self.page_number = self.get_last_page_number()
+        self.last_post = self.get_last_post()
+        self.set_last_read()
+
+    def get_posts_left_til_snipe(self):
+        self.load_end_of_thread()
+        posts_left_til_snipe = 40 - self.last_post
+        return posts_left_til_snipe
 
     def get_name(self):
         raw_page = self.get_raw_page(1)
@@ -136,7 +145,6 @@ class Thread:
 
         index = ((posts_per_page * (page_number - 1)) + post_number - 1)
         return index
-
 
     def set_last_read(self):
         if self.dispatcher.logged_in and self.last_read_index:

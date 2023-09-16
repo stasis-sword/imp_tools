@@ -3,7 +3,8 @@ A set of thread-reading and -parsing utilities for use with the SA Forums and
 Imp Zone. 
 
 ## Setup: 
-- [Install python locally](https://wiki.python.org/moin/BeginnersGuide/Download)
+- [Install python locally](
+https://wiki.python.org/moin/BeginnersGuide/Download)
 - In a local terminal, run `pip3 install -r requirements.txt`.
 - Make a copy of the `config.ini.example` file, named `config.ini`
 - (Optional) enter your SA username/password into your `config.ini`. This is 
@@ -19,8 +20,9 @@ only visible to your local machine and the SA forums, never sent anywhere
   - Logging in is necessary for any utility which accesses a thread that is 
     paywalled.
 - If you are going to use a utility that accesses the IZGC Firebase DB, you'll
-need to [generate a service account key](https://cloud.google.com/docs/authentication/provide-credentials-adc#local-key). 
-Put the resulting JSON file in the `imp_tools` directory and rename it to 
+need to [generate a service account key](
+https://cloud.google.com/docs/authentication/provide-credentials-adc#local-key)
+. Put the resulting JSON file in the `imp_tools` directory and rename it to 
 `service_account.json`.
 
 ---
@@ -53,5 +55,14 @@ This utility will return a list of posters in a given thread, along with the
 time stamp of their most recent post. The list is sorted from most recent to 
 least recent.
 
-To run, call `python recent_contributors.py` and put in the thread id of the 
-thread when prompted.
+To run, call `python recent_contributors.py {thread id}` with the numerical
+id of the thread.
+
+### Snipe Countdown
+
+This tool will tell you how many posts you must await before a thread can be 
+sniped. I was born on a battlefield. Raised on a battlefield. Gunfire, sirens, 
+and screams... They were my lullabies...
+
+To run, call `python snipe_countdown.py {thread id}` with the numerical
+id of the thread.

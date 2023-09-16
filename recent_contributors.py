@@ -3,7 +3,7 @@ import sys
 
 from dispatcher import Dispatcher
 from thread_reader import Thread
-
+from imp_tool_errors import InvalidArgumentError
 
 def by_time(user_post):
     return datetime.strptime(
@@ -18,11 +18,21 @@ def get_sorted_recent_posts():
     return sorted(most_recent_posts.items(), key=by_time, reverse=True)
 
 
+USAGE_MESSAGE = "Usage: recent_contributors {thread id}. ID should be a number."
+
+try:
+    thread_id = int(sys.argv[1])
+except IndexError as exc:
+    raise InvalidArgumentError(
+        f"No thread id supplied.\n{USAGE_MESSAGE}") from exc
+except ValueError as exc:
+    raise InvalidArgumentError(
+        f"Invalid thread id supplied.\n{USAGE_MESSAGE}") from exc
+
 dispatcher = Dispatcher()
 dispatcher.login(required=False)
 
 print("Preparing to scan thread for recent contributors.")
-thread_id = input("Thread id: ")
 thread = Thread(dispatcher=dispatcher, thread_id=thread_id)
 print(f"Reading thread: {thread.name}")
 confirm = input("Continue? (y/N)> ")
