@@ -1,4 +1,4 @@
-# sa_imp_utils
+# Imp Tools
 A set of thread-reading and -parsing utilities for use with the SA Forums and 
 Imp Zone. 
 
@@ -7,7 +7,7 @@ Imp Zone.
 - In a local terminal, run `pip3 install -r requirements.txt`.
 - Make a copy of the `config.ini.example` file, named `config.ini`
 - (Optional) enter your SA username/password into your `config.ini`. This is 
-- only visible to your local machine and the SA forums, never sent anywhere 
+only visible to your local machine and the SA forums, never sent anywhere 
   else.
   - If you opt not to enter your credentials, the forums will be viewed as an
     unregistered user, enabling all the word filters. I added functionality to
@@ -18,6 +18,10 @@ Imp Zone.
     it will mark the first post as last read.
   - Logging in is necessary for any utility which accesses a thread that is 
     paywalled.
+- If you are going to use a utility that accesses the IZGC Firebase DB, you'll
+need to [generate a service account key](https://cloud.google.com/docs/authentication/provide-credentials-adc#local-key). 
+Put the resulting JSON file in the `imp_tools` directory and rename it to 
+`service_account.json`.
 
 ---
 

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import sys
 
 from dispatcher import Dispatcher
@@ -6,7 +6,7 @@ from thread_reader import Thread
 
 
 def by_time(user_post):
-    return datetime.datetime.strptime(
+    return datetime.strptime(
         user_post[1].timestamp(), "%b %d, %Y %H:%M")
 
 
