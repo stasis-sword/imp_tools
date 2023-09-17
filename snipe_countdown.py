@@ -1,8 +1,8 @@
 import sys
 
-from dispatcher import Dispatcher
-from thread_reader import Thread
-from imp_tool_errors import InvalidArgumentError
+from lib.dispatcher import Dispatcher
+from lib.thread_reader import Thread
+from lib.imp_tool_errors import InvalidArgumentError
 
 USAGE_MESSAGE = "Usage: snipe_countdown {thread id}. ID should be a number."
 

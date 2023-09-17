@@ -1,9 +1,10 @@
 from datetime import datetime
 import sys
 
-from dispatcher import Dispatcher
-from thread_reader import Thread
-from imp_tool_errors import InvalidArgumentError
+from lib.dispatcher import Dispatcher
+from lib.thread_reader import Thread
+from lib.imp_tool_errors import InvalidArgumentError
+
 
 def by_time(user_post):
     return datetime.strptime(

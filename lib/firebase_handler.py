@@ -101,6 +101,7 @@ class FirebaseHandler:
         return trophy_dict
 
     def get_trophy_dict_from_db(self):
+        print('Retrieving eligible trophies from db...')
         game_trophies = self.get_firebase_trophies_by_collection_type(
             'games', 'clubYear')
         event_trophies = self.get_firebase_trophies_by_collection_type(

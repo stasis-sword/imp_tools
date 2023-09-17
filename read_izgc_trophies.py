@@ -1,8 +1,8 @@
 import sys
 
-from dispatcher import Dispatcher
-from trophy_scanner import TrophyReporter, IZGCThread
-from imp_tool_errors import InvalidArgumentError
+from lib.dispatcher import Dispatcher
+from lib.trophy_scanner import TrophyReporter, IZGCThread
+from lib.imp_tool_errors import InvalidArgumentError
 
 USAGE_MESSAGE = "Usage: read_izgc_trophies --start-page {page number}"
 

@@ -1,6 +1,6 @@
 import pytest
 
-import trophy_scanner
+from lib import trophy_scanner
 
 
 @pytest.fixture(name="mock_trophy_log")
