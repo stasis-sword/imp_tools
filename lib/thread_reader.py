@@ -56,17 +56,19 @@ class Thread:
         name = BeautifulSoup(raw_page.text, "html.parser").title.text[:-29]
         return name
 
-    def get_raw_page(self, page_number):
-        payload = {
-            "threadid": self.thread, "pagenumber": str(page_number)}
-        resp = self.dispatcher.get_thread(params=payload)
-        if "Specified thread was not found in the live forums." in resp.text:
+    def check_thread_is_valid(self, response):
+        if "Specified thread was not found in the live forum" in response.text:
             raise ThreadNotFoundError(f"Thread {self.thread} not accessible.")
-        if "Sorry, you must be a registered forums member" in resp.text:
+        if "Sorry, you must be a registered forums member" in response.text:
             raise ThreadNotFoundError(f"""Thread {self.thread} is paywalled.
             You must enter your login credentials in config.ini to access.""")
 
-        return resp
+    def get_raw_page(self, page_number):
+        payload = {
+            "threadid": self.thread, "pagenumber": str(page_number)}
+        response = self.dispatcher.get_thread(params=payload)
+
+        return response
 
     def get_page(self, page_number=None):
         page_number = self.page_number if page_number is None else page_number
@@ -131,6 +133,7 @@ class Thread:
         response = self.dispatcher.get_thread(
             params={"threadid": self.thread, "goto": "newpost"},
             allow_redirects=False)
+        self.check_thread_is_valid(response)
 
         try:
             post_number = scrape_redirect_url(response, r"#pti(\d+)")
