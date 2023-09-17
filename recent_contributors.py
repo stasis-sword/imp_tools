@@ -1,8 +1,9 @@
+import argparse
 from datetime import datetime
-import sys
 
-from dispatcher import Dispatcher
-from thread_reader import Thread
+from lib.dispatcher import Dispatcher
+from lib.thread_reader import Thread
+from lib.helpers import use_single_thread_id_args
 
 
 def by_time(user_post):
@@ -18,22 +19,29 @@ def get_sorted_recent_posts():
     return sorted(most_recent_posts.items(), key=by_time, reverse=True)
 
 
-dispatcher = Dispatcher()
-dispatcher.login(required=False)
+parser = argparse.ArgumentParser(
+    description=('get a list of recent contributors to a thread, and the ' +
+                 'timestamp of their most recent post.')
+)
+use_single_thread_id_args(parser)
 
-print("Preparing to scan thread for recent contributors.")
-thread_id = input("Thread id: ")
-thread = Thread(dispatcher=dispatcher, thread_id=thread_id)
-print(f"Reading thread: {thread.name}")
-confirm = input("Continue? (y/N)> ")
-if confirm.lower() not in ["y", "yes"]:
-    print("OK. Aborting.")
-    sys.exit(0)
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-most_recent_posts = {}
-sorted_recent_posts = get_sorted_recent_posts()
+    dispatcher = Dispatcher()
+    dispatcher.login(required=False)
 
-print("Most recent posts by each user (sorted by newest):")
-for sorted_post in sorted_recent_posts:
-    user = sorted_post[0]
-    print(f"{user}: {most_recent_posts[user].timestamp()}")
+    print("Preparing to scan thread for recent contributors.")
+    thread = Thread(dispatcher=dispatcher, thread_id=args.thread_id)
+    print(f"Reading thread: {thread.name}")
+    confirm = input("This may take a few minutes. Continue? (y/N)> ")
+    if confirm.lower() not in ["y", "yes"]:
+        print("OK. Aborting.")
+    else:
+        most_recent_posts = {}
+        sorted_recent_posts = get_sorted_recent_posts()
+
+        print("Most recent posts by each user (sorted by newest):")
+        for sorted_post in sorted_recent_posts:
+            user = sorted_post[0]
+            print(f"{user}: {most_recent_posts[user].timestamp()}")

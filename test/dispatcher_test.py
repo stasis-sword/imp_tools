@@ -1,6 +1,6 @@
 import pytest
 
-import dispatcher
+from lib import dispatcher
 
 
 @pytest.fixture(name="dis")

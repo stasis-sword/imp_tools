@@ -6,8 +6,8 @@ from datetime import datetime
 
 import pytz
 
-from thread_reader import Thread
-from firebase_handler import FirebaseHandler
+from lib.thread_reader import Thread
+from lib.firebase_handler import FirebaseHandler
 
 fb_handler = FirebaseHandler()
 
@@ -74,11 +74,17 @@ class IZGCThread(Thread):
             dispatcher=dispatcher,
             thread_id=dispatcher.config["DEFAULT"]["izgc_thread_id"]
         )
-        self.eligible_trophies = fb_handler.get_trophy_dict_from_db()
+
+    # loading the trophy list is expensive, so we'll lazy load it
+    def __getattr__(self, name):
+        if name == 'eligible_trophies':
+            eligible_trophies = self.eligible_trophies = fb_handler.get_trophy_dict_from_db()
+            return eligible_trophies
+        return super(IZGCThread, self).__getattr__(name)
 
     def trophy_scan(self):
-        imp_trophies = {}
         post_list = self.new_posts()
+        imp_trophies = {}
 
         for post in post_list:
             post.remove_quotes()
