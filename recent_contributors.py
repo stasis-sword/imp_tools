@@ -1,9 +1,9 @@
+import argparse
 from datetime import datetime
-import sys
 
 from lib.dispatcher import Dispatcher
 from lib.thread_reader import Thread
-from lib.imp_tool_errors import InvalidArgumentError
+from lib.helpers import use_single_thread_id_args
 
 
 def by_time(user_post):
@@ -19,32 +19,29 @@ def get_sorted_recent_posts():
     return sorted(most_recent_posts.items(), key=by_time, reverse=True)
 
 
-USAGE_MESSAGE = "Usage: recent_contributors {thread id}. ID should be a number."
+parser = argparse.ArgumentParser(
+    description=('get a list of recent contributors to a thread, and the ' +
+                 'timestamp of their most recent post.')
+)
+use_single_thread_id_args(parser)
 
-try:
-    thread_id = int(sys.argv[1])
-except IndexError as exc:
-    raise InvalidArgumentError(
-        f"No thread id supplied.\n{USAGE_MESSAGE}") from exc
-except ValueError as exc:
-    raise InvalidArgumentError(
-        f"Invalid thread id supplied.\n{USAGE_MESSAGE}") from exc
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-dispatcher = Dispatcher()
-dispatcher.login(required=False)
+    dispatcher = Dispatcher()
+    dispatcher.login(required=False)
 
-print("Preparing to scan thread for recent contributors.")
-thread = Thread(dispatcher=dispatcher, thread_id=thread_id)
-print(f"Reading thread: {thread.name}")
-confirm = input("Continue? (y/N)> ")
-if confirm.lower() not in ["y", "yes"]:
-    print("OK. Aborting.")
-    sys.exit(0)
+    print("Preparing to scan thread for recent contributors.")
+    thread = Thread(dispatcher=dispatcher, thread_id=args.thread_id)
+    print(f"Reading thread: {thread.name}")
+    confirm = input("This may take a few minutes. Continue? (y/N)> ")
+    if confirm.lower() not in ["y", "yes"]:
+        print("OK. Aborting.")
+    else:
+        most_recent_posts = {}
+        sorted_recent_posts = get_sorted_recent_posts()
 
-most_recent_posts = {}
-sorted_recent_posts = get_sorted_recent_posts()
-
-print("Most recent posts by each user (sorted by newest):")
-for sorted_post in sorted_recent_posts:
-    user = sorted_post[0]
-    print(f"{user}: {most_recent_posts[user].timestamp()}")
+        print("Most recent posts by each user (sorted by newest):")
+        for sorted_post in sorted_recent_posts:
+            user = sorted_post[0]
+            print(f"{user}: {most_recent_posts[user].timestamp()}")
