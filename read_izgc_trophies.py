@@ -33,7 +33,7 @@ if __name__ == '__main__':
         club_thread.page_number = 1
         club_thread.last_post = 0
     elif args.start_page:
-        club_thread.page_number = 1
+        club_thread.page_number = args.start_page
         club_thread.last_post = 0
     else:
         club_thread.load_previous_stopping_point()

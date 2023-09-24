@@ -19,16 +19,17 @@ def get_sorted_recent_posts():
     return sorted(most_recent_posts.items(), key=by_time, reverse=True)
 
 
+dispatcher = Dispatcher()
+
 parser = argparse.ArgumentParser(
     description=('get a list of recent contributors to a thread, and the ' +
                  'timestamp of their most recent post.')
 )
-use_single_thread_id_args(parser)
+use_single_thread_id_args(parser, dispatcher.default_thread)
 
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    dispatcher = Dispatcher()
     dispatcher.login(required=False)
 
     print("Preparing to scan thread for recent contributors.")
