@@ -23,6 +23,7 @@ class Dispatcher:
             raise InvalidConfigError(f"{self.CONFIG_FILE} is missing!")
         self.config.read(self.CONFIG_FILE)
         self.logged_in = False
+        self.default_thread = self.config["DEFAULT"]["izgc_thread_id"]
 
     def check_sa_creds(self):
         if "username" not in self.config["DEFAULT"] \

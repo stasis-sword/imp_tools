@@ -31,6 +31,9 @@ project root. Then, invoke the utility with `python -m utility_name
 (arguments)`. For more information on each tool's usage, call it with `-h` or 
 `--help`, e.g. `python -m snipe_countdown -h`.
 
+Currently, tools that accept thread ID numbers as arguments default to the IZGC
+thread, but can be overridden (see tool help for exact usage).
+
 ---
 
 ## Currently working utilities:
@@ -57,7 +60,8 @@ This utility will return a list of posters in a given thread, along with the
 time stamp of their most recent post. The list is sorted from most recent to 
 least recent. 
 
-It requires a single argument, the ID of the thread to check.
+It accepts a single argument, the ID of the thread to check, and defaults to
+the IZGC thread.
 
 ### Trophy Migrator
 
@@ -71,4 +75,5 @@ This tool will tell you how many posts you must await before a thread can be
 sniped. I was born on a battlefield. Raised on a battlefield. Gunfire, sirens, 
 and screams... They were my lullabies...
 
-It requires a single argument, the ID of the thread to check.
+It accepts a single argument, the ID of the thread to check, and defaults to
+the IZGC thread.

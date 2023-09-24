@@ -1,7 +1,9 @@
-def use_single_thread_id_args(parser):
+def use_single_thread_id_args(parser, default_thread_id):
     parser.add_argument(
-        'thread_id',
-        metavar='thread ID',
+        '--thread-id',
+        metavar='{number}',
         type=int,
-        help='the numerical ID of the thread to check'
+        default=default_thread_id,
+        help='(optional) the numerical ID of the thread to check. If not ' +
+             'supplied, defaults to IZGC thread.'
     )

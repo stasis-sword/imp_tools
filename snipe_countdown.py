@@ -4,15 +4,15 @@ from lib.dispatcher import Dispatcher
 from lib.thread_reader import Thread
 from lib.helpers import use_single_thread_id_args
 
+dispatcher = Dispatcher()
 
 parser = argparse.ArgumentParser(
     description='Count down posts to thread snipe.')
-use_single_thread_id_args(parser)
+use_single_thread_id_args(parser, dispatcher.default_thread)
 
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    dispatcher = Dispatcher()
     dispatcher.login(required=False)
     thread = Thread(dispatcher=dispatcher, thread_id=args.thread_id)
 
