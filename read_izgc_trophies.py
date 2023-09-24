@@ -18,7 +18,13 @@ parser.add_argument(
     '--all-pages',
     action='store_true',
     help=('if called, start at the beginning of the thread. overrides ' +
-          '--start-page.')
+          '--start-page.'))
+parser.add_argument(
+    '--year-override',
+    metavar='{year}',
+    type=int,
+    help=('(optional) the year to scan for trophies from. Used to scan for ' +
+          'trophies from a previous year.')
 )
 
 
@@ -27,7 +33,8 @@ if __name__ == '__main__':
 
     dispatcher = Dispatcher()
     dispatcher.login(required=False)
-    club_thread = IZGCThread(dispatcher=dispatcher)
+    club_thread = IZGCThread(
+        dispatcher=dispatcher, year_override=args.year_override)
 
     if args.all_pages:
         club_thread.page_number = 1
