@@ -26,12 +26,15 @@ def get_trophy_dict():
     soup = BeautifulSoup(response.text, "html.parser")
 
     trophies = soup.find_all("div", attrs={
-        'class': re.compile('^item-trophy tooltip( plat)?')})
+        # skip trophies that end in "unique".
+        # We can add those manually if we want.
+        'class': re.compile('^item-trophy tooltip.*(?<!unique)$')})
     for trophy in trophies:
         trophy_info_strings = tuple(trophy.stripped_strings)
         image_path = trophy.find('img')['src']
         system_year = trophy_info_strings[2]
         name = trophy_info_strings[0]
+
         plat = "PLATINUM" in name
         if "SECRET" not in name:
             secret = {}
@@ -50,9 +53,6 @@ def get_trophy_dict():
         game = game.replace('â\x80\x99', "’")
         name = name.replace('â\x80\x99', "’")
 
-        # skip the legacy doom trophies. We can add those manually if we want
-        if 'doom' in game.lower():
-            continue
         trophy_data = {
             "image_url": image_path,
             "game": game,
