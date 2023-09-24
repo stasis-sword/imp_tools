@@ -25,12 +25,11 @@ def new_year_datetime(year):
 
 
 class FirebaseHandler:
-    def __init__(self):
+    def __init__(self, year=None):
         cred = credentials.Certificate('service_account.json')
         firebase_admin.initialize_app(cred)
         self.db_client = firestore.client()
-        # this could cause a problem if run right after the year ends...
-        self.year = datetime.now().astimezone(CLUB_TIMEZONE).year
+        self.year = year or datetime.now().astimezone(CLUB_TIMEZONE).year
 
     def get_time_window(self, game_or_event_doc):
         properties = game_or_event_doc.to_dict()
@@ -100,7 +99,9 @@ class FirebaseHandler:
 
         return trophy_dict
 
-    def get_trophy_dict_from_db(self):
+    def get_trophy_dict_from_db(self, year_override = None):
+        if year_override:
+            self.year = year_override
         print('Retrieving eligible trophies from db...')
         game_trophies = self.get_firebase_trophies_by_collection_type(
             'games', 'clubYear')

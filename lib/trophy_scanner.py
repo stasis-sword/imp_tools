@@ -68,8 +68,9 @@ class TrophyReporter:
 
 class IZGCThread(Thread):
     """Thread with additional functionality for trophy scanning"""
-    def __init__(self, *, dispatcher):
+    def __init__(self, *, dispatcher, year_override=None):
         self.dispatcher = dispatcher
+        self.year_override = year_override
         super().__init__(
             dispatcher=dispatcher,
             thread_id=dispatcher.config["DEFAULT"]["izgc_thread_id"]
@@ -78,7 +79,8 @@ class IZGCThread(Thread):
     # loading the trophy list is expensive, so we'll lazy load it
     def __getattr__(self, name):
         if name == 'eligible_trophies':
-            eligible_trophies = self.eligible_trophies = fb_handler.get_trophy_dict_from_db()
+            eligible_trophies = self.eligible_trophies = \
+                fb_handler.get_trophy_dict_from_db(self.year_override)
             return eligible_trophies
         return super(IZGCThread, self).__getattr__(name)
 
