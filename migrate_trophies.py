@@ -15,6 +15,12 @@ app = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 
+def get_stripped_text(element):
+    string_list = list(element.stripped_strings)
+    text = ' '.join(string_list)
+    return text
+
+
 def get_trophy_dict():
     # This should probably be in a config file, but I'm not putting it
     # there just so it's a little less visible to casual perusal.
@@ -30,18 +36,19 @@ def get_trophy_dict():
         # We can add those manually if we want.
         'class': re.compile('^item-trophy tooltip.*(?<!unique)$')})
     for trophy in trophies:
-        trophy_info_strings = tuple(trophy.stripped_strings)
+        trophy_info_spans = list(
+            map(get_stripped_text, trophy.find_all("span")))
         image_path = trophy.find('img')['src']
-        system_year = trophy_info_strings[2]
-        name = trophy_info_strings[0]
+        system_year = trophy_info_spans[2]
+        name = trophy_info_spans[0]
 
         plat = "PLATINUM" in name
         if "SECRET" not in name:
             secret = {}
-            game = trophy_info_strings[1]
+            game = trophy_info_spans[1]
         else:
             game = ""
-            secret = {"description": trophy_info_strings[1]}
+            secret = {"description": trophy_info_spans[1]}
             if "2022" in system_year:
                 secret["year"] = 2022
             elif "2023" in system_year:
