@@ -41,10 +41,6 @@ class FirebaseHandler:
             start_time = properties['startTime']
             end_time = properties['endTime']
             return start_time, end_time
-        if properties.get('hidden'):
-            # hidden game or event - use default time window for year. Should
-            # this behavior be different?
-            return default_start_time, default_end_time
 
         # game or event doesn't have a time window set. Check for umbrella
         # event with time window
@@ -73,8 +69,12 @@ class FirebaseHandler:
 
         doc_stream = self.db_client.collection(collection_name).stream()
         for doc in doc_stream:
-            # only gather trophies from games/events from this year
             properties = doc.to_dict()
+            # don't scan for trophies from hidden games/events
+            if properties.get('hidden'):
+                continue
+
+            # only gather trophies from games/events from this year
             doc_year = properties.get(year_property)
             if not doc_year:
                 print(f'*** Warning! No year entered for {doc.id}. Trophies ' +
