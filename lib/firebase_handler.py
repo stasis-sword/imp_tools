@@ -30,6 +30,15 @@ class FirebaseHandler:
         firebase_admin.initialize_app(cred)
         self.db_client = firestore.client()
         self.year = year or datetime.now().astimezone(CLUB_TIMEZONE).year
+        self.all_trophies_event_windows = []
+
+    # loading the trophy list is expensive, so we'll lazy load it
+    def __getattr__(self, name):
+        if name == 'eligible_trophies':
+            eligible_trophies = self.eligible_trophies = \
+                self.get_trophy_dict_from_db()
+            return eligible_trophies
+        return super().__getattr__(name)
 
     def get_time_window(self, game_or_event_doc):
         properties = game_or_event_doc.to_dict()
@@ -39,6 +48,11 @@ class FirebaseHandler:
         if properties.get('startTime') and properties.get('endTime'):
             start_time = properties['startTime']
             end_time = properties['endTime']
+            # if event is open for all trophies (e.g. Impmas) add it to list of
+            # all trophy time windows
+            if properties.get('allTrophiesEvent'):
+                window = {'start_time': start_time, 'end_time': end_time}
+                self.all_trophies_event_windows.append(window)
             return start_time, end_time
 
         # game or event doesn't have a time window set. Check for umbrella
@@ -99,9 +113,7 @@ class FirebaseHandler:
 
         return trophy_dict
 
-    def get_trophy_dict_from_db(self, year_override = None):
-        if year_override:
-            self.year = year_override
+    def get_trophy_dict_from_db(self):
         print('Retrieving eligible trophies from db...')
         game_trophies = self.get_firebase_trophies_by_collection_type(
             'games', 'clubYear')

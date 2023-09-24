@@ -70,19 +70,12 @@ class IZGCThread(Thread):
     """Thread with additional functionality for trophy scanning"""
     def __init__(self, *, dispatcher, year_override=None):
         self.dispatcher = dispatcher
-        self.year_override = year_override
+        if year_override:
+            fb_handler.year = year_override
         super().__init__(
             dispatcher=dispatcher,
             thread_id=dispatcher.config["DEFAULT"]["izgc_thread_id"]
         )
-
-    # loading the trophy list is expensive, so we'll lazy load it
-    def __getattr__(self, name):
-        if name == 'eligible_trophies':
-            eligible_trophies = self.eligible_trophies = \
-                fb_handler.get_trophy_dict_from_db(self.year_override)
-            return eligible_trophies
-        return super(IZGCThread, self).__getattr__(name)
 
     def trophy_scan(self):
         post_list = self.new_posts()
@@ -100,6 +93,21 @@ class IZGCThread(Thread):
 
         return imp_trophies
 
+    @staticmethod
+    def valid_post_timestamp(trophy_data, parsed_timestamp):
+        if (
+            trophy_data['start_time'] <
+                parsed_timestamp <
+                trophy_data['end_time']
+        ):
+            return True
+
+        for window in fb_handler.all_trophies_event_windows:
+            if window['start_time'] < parsed_timestamp < window['end_time']:
+                return True
+
+        return False
+
     def get_post_trophies(self, post):
         earned_trophies = {}
         images = post.image_urls()
@@ -107,12 +115,12 @@ class IZGCThread(Thread):
         parsed_timestamp = datetime.strptime(
             post_timestamp, "%b %d, %Y %H:%M").astimezone(pytz.timezone('utc'))
         for image in images:
-            for trophy_path, trophy_data in self.eligible_trophies.items():
+            for trophy_path, trophy_data in \
+                    fb_handler.eligible_trophies.items():
                 if re.search(trophy_path, image):
-                    within_time_window = (trophy_data['start_time'] <
-                                          parsed_timestamp <
-                                          trophy_data['end_time'])
-                    if not within_time_window:
+                    # only record trophies in valid time windows
+                    if not self.valid_post_timestamp(
+                            trophy_data, parsed_timestamp):
                         continue
 
                     new_trophy = {trophy_data["game"]: {
