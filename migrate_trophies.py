@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+
 import requests
 import firebase_admin
 from firebase_admin import firestore
@@ -97,7 +99,7 @@ def add_new_trophy(image_url, game, name, plat, secret):
         game_doc = db.collection("games").document(game).get()
         if not game_doc.exists:
             print(f"creating new game: {game}")
-            game_data = {"clubYear": 2023}
+            game_data = {"clubYear": datetime.now().year}
             if game_alt_display_name:
                 game_data["altDisplayName"] = game_alt_display_name
             db.collection("games").document(game).set(game_data)
