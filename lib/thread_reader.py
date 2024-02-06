@@ -26,7 +26,7 @@ class Thread:
         self.last_read_index = self.get_last_read_index()
         self.page_number = 1
         self.last_post = 0
-        self.name = self.get_name()
+        self.name = self.get_thread_name()
         self.set_last_read()
 
     def load_previous_stopping_point(self):
@@ -49,17 +49,18 @@ class Thread:
         posts_left_til_snipe = 40 - self.last_post
         return posts_left_til_snipe
 
-    def get_name(self):
+    def get_thread_name(self):
         raw_page = self.get_raw_page(1)
+        self.check_thread_is_valid(raw_page)
         self.set_last_read()
         # Strip off " - The Something Awful Forums"
         name = BeautifulSoup(raw_page.text, "html.parser").title.text[:-29]
         return name
 
-    def check_thread_is_valid(self, response):
-        if "Specified thread was not found in the live forum" in response.text:
+    def check_thread_is_valid(self, raw_page):
+        if "Specified thread was not found in the live forum" in raw_page.text:
             raise ThreadNotFoundError(f"Thread {self.thread} not accessible.")
-        if "Sorry, you must be a registered forums member" in response.text:
+        if "Sorry, you must be a registered forums member" in raw_page.text:
             raise ThreadNotFoundError(f"""Thread {self.thread} is paywalled.
             You must enter your login credentials in config.ini to access.""")
 
@@ -127,13 +128,12 @@ class Thread:
     # If the thread is totally unread, it will set the last-read marker such
     # that the whole first page has been read
     def get_last_read_index(self):
+        if not self.dispatcher.logged_in:
+            return None
+
         response = self.dispatcher.get_thread(
             params={"threadid": self.thread, "goto": "newpost"},
             allow_redirects=False)
-        self.check_thread_is_valid(response)
-
-        if not self.dispatcher.logged_in:
-            return None
 
         try:
             post_number = scrape_redirect_url(response, r"#pti(\d+)")
