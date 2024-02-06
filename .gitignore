@@ -2,6 +2,7 @@
 config.ini
 /trophy_timestamps.json
 service_account.json
+debug_data.pkl
 
 # Local env
 .venv/
