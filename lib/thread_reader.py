@@ -127,13 +127,13 @@ class Thread:
     # If the thread is totally unread, it will set the last-read marker such
     # that the whole first page has been read
     def get_last_read_index(self):
-        if not self.dispatcher.logged_in:
-            return None
-
         response = self.dispatcher.get_thread(
             params={"threadid": self.thread, "goto": "newpost"},
             allow_redirects=False)
         self.check_thread_is_valid(response)
+
+        if not self.dispatcher.logged_in:
+            return None
 
         try:
             post_number = scrape_redirect_url(response, r"#pti(\d+)")
