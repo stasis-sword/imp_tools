@@ -2,11 +2,18 @@
 
 import re
 import time
+from datetime import datetime
+
+import pytz
 
 from bs4 import BeautifulSoup
 
 
 class ThreadNotFoundError(Exception):
+    pass
+
+
+class TimestampParsingError(Exception):
     pass
 
 
@@ -52,7 +59,6 @@ class Thread:
     def get_thread_name(self):
         raw_page = self.get_raw_page(1)
         self.check_thread_is_valid(raw_page)
-        self.set_last_read()
         # Strip off " - The Something Awful Forums"
         name = BeautifulSoup(raw_page.text, "html.parser").title.text[:-29]
         return name
@@ -183,11 +189,12 @@ class Page:
             if post.username == "Adbot":
                 continue
             self.posts.append(post)
-            if post.unread():
+            if post.is_unread:
                 self.unread_posts.append(post)
             else:
                 self.read_posts.append(post)
 
+    @property
     def number(self):
         return int(self.soup.find("option", selected="selected")["value"])
 
@@ -205,30 +212,52 @@ class Post:
         self.index = self.raw_post["data-idx"]
         self.body = self.raw_post.find(self.CELL_TAG, "postbody")
 
+        self._timestamp = None
+
+    @property
     def text(self):
         return self.body.get_text()
 
-    def unread(self):
-        # Read posts have a first "tr" with class "seen1" or "seen2"
-        # Unread posts have "altcolor1" or "altcolor2"
-        # Use matching for unread so if this breaks all posts default to read
-        return "altcolor" in self.raw_post.tr["class"][0]
-
+    @property
     def timestamp(self):
-        try:
-            raw = self.raw_post.find(self.CELL_TAG, "postdate").text
-            # Remove the # and ? signs and extra whitespace
-            return raw.translate({35: None, 63: None}).strip()
-        except AttributeError:
-            return "Parsing error. Could not parse timestamp."
+        if self._timestamp is None:
+            try:
+                raw = self.raw_post.find(self.CELL_TAG, "postdate").text
+                # Remove the # and ? signs and extra whitespace
+                timestamp = raw.translate({35: None, 63: None}).strip()
+            except AttributeError as exc:
+                raise TimestampParsingError(
+                    "Parsing error. Could not parse timestamp.") from exc
 
-    def get_avatar_url(self):
+            if 'AM' in timestamp or 'PM' in timestamp:
+                parsed = datetime.strptime(timestamp, "%b %d, %Y %I:%M %p")
+            else:
+                parsed = datetime.strptime(timestamp, "%b %d, %Y %H:%M")
+
+            self._timestamp = parsed.astimezone(pytz.timezone('utc'))
+
+        return self._timestamp
+
+    @property
+    def avatar_url(self):
         # Always grabs actual avatar image. May need special case for Fungah!
         try:
             return self.raw_post.find(self.CELL_TAG, "userinfo").img["src"]
         # User has no avatar
         except TypeError:
             return ""
+
+    @property
+    def is_unread(self):
+        # Read posts have a first "tr" with class "seen1" or "seen2"
+        # Unread posts have "altcolor1" or "altcolor2"
+        # Use matching for unread so if this breaks all posts default to read
+        return "altcolor" in self.raw_post.tr["class"][0]
+
+    @property
+    def link(self):
+        return "https://forums.somethingawful.com/showthread.php?goto=post&" \
+               f"postid={self.post_id}#post{self.post_id}"
 
     def remove_quotes(self):
         quotes = self.body.find_all("div", "bbc-block")
@@ -238,7 +267,3 @@ class Post:
     def image_urls(self):
         images = self.body.find_all("img")
         return list(map(lambda img: img["src"], images))
-
-    def link(self):
-        return "https://forums.somethingawful.com/showthread.php?goto=post&" \
-               f"postid={self.post_id}#post{self.post_id}"

@@ -2,12 +2,10 @@
 
 import json
 import re
-from datetime import datetime
-
-import pytz
 
 from lib.thread_reader import Thread
 from lib.firebase_handler import FirebaseHandler
+from lib.helpers import datetime_formatted_est
 
 fb_handler = FirebaseHandler()
 
@@ -49,6 +47,9 @@ class TrophyReporter:
             for game, game_trophies in trophies.items():
                 for _game_trophy, data in game_trophies.items():
                     del data["reference"]
+                    # convert timestamp into friendly string
+                    data["timestamp"] = datetime_formatted_est(
+                        data["timestamp"])
 
             if imp not in self.trophy_log:
                 new_member_string = " (New Club member!)"
@@ -93,43 +94,40 @@ class IZGCThread(Thread):
 
         return imp_trophies
 
-    @staticmethod
-    def valid_post_timestamp(trophy_data, parsed_timestamp):
-        if (
-            trophy_data['start_time'] <
-                parsed_timestamp <
-                trophy_data['end_time']
-        ):
-            return True
-
-        for window in fb_handler.all_trophies_event_windows:
-            if window['start_time'] < parsed_timestamp < window['end_time']:
-                return True
-
-        return False
-
     def get_post_trophies(self, post):
         earned_trophies = {}
         images = post.image_urls()
-        post_timestamp = post.timestamp()
-        parsed_timestamp = datetime.strptime(
-            post_timestamp, "%b %d, %Y %H:%M").astimezone(pytz.timezone('utc'))
         for image in images:
             for trophy_path, trophy_data in \
                     fb_handler.eligible_trophies.items():
                 if re.search(trophy_path, image):
                     # only record trophies in valid time windows
                     if not self.valid_post_timestamp(
-                            trophy_data, parsed_timestamp):
+                            trophy_data, post.timestamp):
                         continue
 
                     new_trophy = {trophy_data["game"]: {
                         trophy_data["name"]: {
-                            "timestamp": post_timestamp,
-                            "link": post.link(),
+                            "timestamp": post.timestamp,
+                            "link": post.link,
                             "reference": trophy_data["reference"]
                         }}}
 
                     update_trophy_dict(earned_trophies, new_trophy)
 
         return earned_trophies
+
+    @staticmethod
+    def valid_post_timestamp(trophy_data, post_timestamp):
+        if (
+                trophy_data['start_time'] <
+                post_timestamp <
+                trophy_data['end_time']
+        ):
+            return True
+
+        for window in fb_handler.all_trophies_event_windows:
+            if window['start_time'] < post_timestamp < window['end_time']:
+                return True
+
+        return False

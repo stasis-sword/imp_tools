@@ -31,14 +31,14 @@ class FirebaseHandler:
         self.db_client = firestore.client()
         self.year = year or datetime.now().astimezone(CLUB_TIMEZONE).year
         self.all_trophies_event_windows = []
+        self._eligible_trophies = None
 
-    # loading the trophy list is expensive, so we'll lazy load it
-    def __getattr__(self, name):
-        if name == 'eligible_trophies':
-            eligible_trophies = self.eligible_trophies = \
-                self.get_trophy_dict_from_db()
-            return eligible_trophies
-        return super().__getattr__(name)
+    @property
+    def eligible_trophies(self):
+        if self._eligible_trophies is None:
+            self._eligible_trophies = self.get_trophy_dict_from_db()
+
+        return self._eligible_trophies
 
     def get_time_window(self, game_or_event_doc):
         properties = game_or_event_doc.to_dict()
@@ -156,6 +156,5 @@ class FirebaseHandler:
                 trophy_ref.set({
                     'trophy': trophy_data['reference'],
                     'postUrl': trophy_data['link'],
-                    'timestamp': datetime.strptime(
-                        trophy_data['timestamp'], "%b %d, %Y %H:%M")
+                    'timestamp': trophy_data['timestamp'],
                 })

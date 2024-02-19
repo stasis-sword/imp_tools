@@ -1,14 +1,12 @@
 import argparse
-from datetime import datetime
 
 from lib.dispatcher import Dispatcher
 from lib.thread_reader import Thread
-from lib.helpers import use_single_thread_id_args
+from lib.helpers import use_single_thread_id_args, datetime_formatted_est
 
 
 def by_time(user_post):
-    return datetime.strptime(
-        user_post[1].timestamp(), "%b %d, %Y %H:%M")
+    return user_post[1].timestamp
 
 
 def get_sorted_recent_posts():
@@ -45,4 +43,6 @@ if __name__ == '__main__':
         print("Most recent posts by each user (sorted by newest):")
         for sorted_post in sorted_recent_posts:
             user = sorted_post[0]
-            print(f"{user}: {most_recent_posts[user].timestamp()}")
+            formatted_timestamp = datetime_formatted_est(
+                most_recent_posts[user].timestamp)
+            print(f"{user}: {formatted_timestamp}")
