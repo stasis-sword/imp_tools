@@ -1,4 +1,6 @@
 from datetime import datetime
+import os
+from pathlib import Path
 
 import pytz
 import firebase_admin
@@ -26,8 +28,22 @@ def new_year_datetime(year):
 
 class FirebaseHandler:
     def __init__(self, year=None):
-        cred = credentials.Certificate('service_account.json')
-        firebase_admin.initialize_app(cred)
+        # Check if we're in a Cloud Function environment
+        if os.getenv('FUNCTION_TARGET'):
+            # Use default credentials in Cloud Functions
+            cred = credentials.ApplicationDefault()
+        else:
+            # Look for service_account.json in the imp_tools root directory
+            current_dir = Path(__file__).parent.parent
+            service_account_path = current_dir / 'service_account.json'
+            if not service_account_path.exists():
+                raise FileNotFoundError(
+                    f"Service account file not found at {service_account_path}\n"
+                    "Please ensure service_account.json is in the imp_tools root directory"
+                )
+            cred = credentials.Certificate(str(service_account_path))
+            firebase_admin.initialize_app(cred)
+        
         self.db_client = firestore.client()
         self.year = year or datetime.now().astimezone(CLUB_TIMEZONE).year
         self.all_trophies_event_windows = []
