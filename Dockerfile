@@ -10,9 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# local dev only
-COPY service_account.json .
 COPY . .
+
+RUN if [ ! -f service_account.json ]; then \
+    echo '{"type":"service_account","note":"This is a placeholder file. In production, use GOOGLE_APPLICATION_CREDENTIALS environment variable."}' > service_account.json; \
+    fi
 
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
