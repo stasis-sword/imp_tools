@@ -21,9 +21,10 @@ only visible to your local machine and the SA forums, never sent anywhere
     pay-walled.
 - If you are going to use a utility that accesses the IZGC Firebase DB, you'll
 need to [generate a service account key](
-https://cloud.google.com/docs/authentication/provide-credentials-adc#local-key)
-. Put the resulting JSON file in the `imp_tools` directory and rename it to 
-`service_account.json`.
+https://cloud.google.com/docs/authentication/provide-credentials-adc#local-key) 
+for the firestore db. If you don't know what this is, you probably shouldn't be 
+doing this. Put the resulting JSON file in the `imp_tools` directory and rename 
+it to `service_account.json`.
 
 ## Usage:
 To use a tool, open a terminal such as command.exe or powershell in the

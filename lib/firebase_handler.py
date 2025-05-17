@@ -1,4 +1,6 @@
 from datetime import datetime
+import os
+from pathlib import Path
 
 import pytz
 import firebase_admin
@@ -26,8 +28,58 @@ def new_year_datetime(year):
 
 class FirebaseHandler:
     def __init__(self, year=None):
-        cred = credentials.Certificate('service_account.json')
-        firebase_admin.initialize_app(cred)
+        # Check if Firebase is already initialized
+        if not firebase_admin._apps:
+            # Check for different credential sources
+            cred = None
+            
+            # Check for explicit service account credential environment variable
+            explicit_cred_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
+            if explicit_cred_path:
+                if os.path.exists(explicit_cred_path):
+                    print(f"Using service account from FIREBASE_SERVICE_ACCOUNT"
+                          f": {explicit_cred_path}")
+                    cred = credentials.Certificate(explicit_cred_path)
+                else:
+                    print(f"Warning: FIREBASE_SERVICE_ACCOUNT path doesn't "
+                          f"exist: {explicit_cred_path}")
+            
+            # Check if we're in a Cloud environment
+            if cred is None and (os.getenv('FUNCTION_TARGET') or 
+                               os.getenv('K_SERVICE')):
+                # We're in Cloud Functions or Cloud Run
+                print("Using application default credentials in cloud "
+                      "environment")
+                try:
+                    cred = credentials.ApplicationDefault()
+                except Exception as e:
+                    print(f"Error using application default credentials: {e}")
+            
+            # Fallback to service_account.json in the package directory
+            if cred is None:
+                current_dir = Path(__file__).parent.parent
+                service_account_path = current_dir / 'service_account.json'
+                if service_account_path.exists():
+                    print(f"Using service account file from: "
+                          f"{service_account_path}")
+                    cred = credentials.Certificate(str(service_account_path))
+                else:
+                    raise FileNotFoundError(
+                        f"Service account file not found at "
+                        f"{service_account_path}\n"
+                        "Please provide Firebase credentials through one of "
+                        "these methods:\n"
+                        "1. Set FIREBASE_SERVICE_ACCOUNT environment variable "
+                        "to the path of your service account JSON file\n"
+                        "2. In Cloud Run/Functions, ensure proper IAM "
+                        "permissions are set\n"
+                        "3. Place service_account.json in the imp_tools root"
+                        "directory\n"
+                    )
+            
+            # Initialize Firebase
+            firebase_admin.initialize_app(cred)
+        
         self.db_client = firestore.client()
         self.year = year or datetime.now().astimezone(CLUB_TIMEZONE).year
         self.all_trophies_event_windows = []
