@@ -132,8 +132,7 @@ class BundleGenerator:
             }
             
             generated_bundles.append(bundle_info)
-            print(f"Generated bundle with {bundle_data['metadata'][
-                'totalDocuments']} documents")
+            print(f"Generated bundle with {bundle_data['metadata']['totalDocuments']} documents")
 
         return {
             "total_bundles": len(generated_bundles),

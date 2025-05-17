@@ -84,8 +84,7 @@ gcloud run deploy imp-tools `
   --region us-central1 `
   --allow-unauthenticated `
   --memory 512Mi `
-  --cpu 1 `
-  --set-env-vars "BUNDLE_OUTPUT_DIR=/tmp/bundles"
+  --cpu 1
 ```
 
 Replace `YOUR_PROJECT_ID` with your Google Cloud project ID.
@@ -136,6 +135,22 @@ Request body (all fields optional):
 
 Generates bundles for all imp trophy collections and returns the list of 
 generated files.
+
+### Random Flag
+
+```
+GET /images/random-flag
+```
+
+Redirects the requests to a random flag url selected from a list of flags hosted on the Something Awful server.
+
+### Random Flag with Creator
+
+```
+GET /images/random-flag-with-creator
+```
+
+Redirects the requests to a random flag url selected from a list of flags hosted on the Something Awful server. Appends the creator of the flag to the end of the url as a parameter query, e.g. `flag-name?by=Arch Nemesis`.
 
 ## Environment Variables
 
