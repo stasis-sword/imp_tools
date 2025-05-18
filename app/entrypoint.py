@@ -1,12 +1,14 @@
-from flask import Flask, request, jsonify, redirect, make_response
 import os
+import logging
+
+from flask import Flask, request, jsonify, redirect, make_response
+from waitress import serve
+from firebase_admin import auth
+from functools import wraps
+
 from lib.bundle_generator import BundleGenerator
 from lib.firebase_handler import FirebaseHandler
 from lib.flags import FlagHandler
-from firebase_admin import auth
-from functools import wraps
-import logging
-from urllib.parse import quote
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -35,9 +37,7 @@ def verify_firebase_token(f):
 
 def generate_cacheless_redirect_response(redirect_url):
     """Create redirect response with no-cache headers"""
-    # Properly encode the URL to handle spaces and special characters
-    encoded_url = quote(redirect_url, safe=':/?=&#')
-    response = make_response(redirect(encoded_url, code=302))
+    response = make_response(redirect(redirect_url, code=302))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -132,5 +132,4 @@ def serve_random_flag_with_creator():
 if __name__ == '__main__':
     # Use PORT environment variable provided by Cloud Run, default to 8080
     port = int(os.environ.get('PORT', 8080))
-    # Run on all interfaces and specified port
-    app.run(host='0.0.0.0', port=port)
+    serve(app, host='0.0.0.0', port=port)

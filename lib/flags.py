@@ -2,9 +2,13 @@ import random
 import json
 import logging
 import os
+import requests
 from typing import List
 from dataclasses import dataclass
+from urllib.parse import quote
+
 from bs4 import BeautifulSoup
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +58,10 @@ class FlagHandler:
         """Generate a flag url for the supplied flag based on name."""
         SA_URL = 'https://fi.somethingawful.com/images/impzone/flags/'
         url = SA_URL + flag.name
-        return url
+        # Encode the URL to handle spaces and special characters
+        encoded_url = quote(url, safe=':/?=&#')
+
+        return encoded_url
 
     def get_random_flag_url(self, with_creator_metadata=False) -> str:
         """
@@ -71,21 +78,10 @@ class FlagHandler:
         url = self.generate_flag_url(flag)
 
         if with_creator_metadata:
-            url += f'?by={flag.by}'
-        
+            encoded_creator = quote(flag.by, safe=':/?=&#')
+            url += f'?by={encoded_creator}'
+
         return url
-
-    def get_random_flag_url_with_metadata(self) -> str:
-        """
-        Get a redirect URL with creator as query parameter.
-            
-        Returns:
-            URL of a random flag with creator as query parameter.
-        """
-        flag = self.get_random_flag()
-        url = self.generate_flag_url(flag)
-
-        return url + f'?by={flag.by}'
     
     def get_flag_list_from_html(self) -> List[Flag]:
         """
@@ -130,6 +126,40 @@ class FlagHandler:
             List[Flag]: Sorted list of Flag objects
         """
         return sorted(flags, key=lambda flag: flag.name.lower())
+    
+    def get_image_from_url(self, url) -> Image:
+        """Retrieve an image from the supplied url and return the Image object"""
+        image = Image.open(requests.get(url, stream=True).raw)
+        return image
+    
+    def check_if_flag_dimensions_valid(self, flag) -> bool:
+        """
+        Retrieves the flag from its url and determines if it is sized correctly.
+        
+        Args:
+            flag (Flag): The flag to check the dimensions of
+
+        Returns:
+            A boolean indicating whether or not the flag is the expected size of 250x100 pixels.
+        """
+        try:
+            flag_url = self.generate_flag_url(flag)
+            flag_image = self.get_image_from_url(flag_url)
+        except Exception as e:
+            print(f"Error retrieving flag image for flag {flag.name}: {str(e)}")
+            return False
+        
+        if flag_image.size != (250, 100):
+            print(f"Flag {flag.name} is not valid; dimensions are {flag_image.size}.")
+            return False
+        else:
+            return True
+        
+    def validate_all_flags(self):
+        for flag in self.flags:
+            valid = self.check_if_flag_dimensions_valid(flag)
+            if valid != True:
+                print(self.generate_flag_url(flag))
 
     def _load_flags_from_file(self) -> None:
         """
