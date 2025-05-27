@@ -100,7 +100,7 @@ class FlagHandler:
         sorted_flags = self.sort_flags_by_name(parsed_flags)
         return sorted_flags
     
-    def add_flags_to_file(self, new_flags) -> None:
+    def add_flags_to_file(self, new_flags: List[Flag]) -> None:
         """
         Adds supplied list of flags to instance flag list and saves to file.
 
@@ -155,11 +155,20 @@ class FlagHandler:
         else:
             return True
         
-    def validate_all_flags(self):
-        for flag in self.flags:
+    def validate_flags(self, flags: List[Flag] = None):
+        if flags is None:
+            flags = self.flags
+
+        malformed_flags_detected = False
+
+        for flag in flags:
             valid = self.check_if_flag_dimensions_valid(flag)
             if valid != True:
                 print(self.generate_flag_url(flag))
+                malformed_flags_detected = True
+
+        if not malformed_flags_detected:
+            print(f'{len(flags)} flag images validated successfully!')
 
     def _load_flags_from_file(self) -> None:
         """
@@ -229,7 +238,7 @@ class FlagHandler:
             # flag name fits expectation. strip off file extension to get creator
             smaller_name_chunks = name_components[1].split('.')
             # remove the last section (file extension) and rejoin since some users have periods in their names
-            creator = '.'.join(smaller_name_chunks)
+            creator = '.'.join(smaller_name_chunks[:-1])
             # special cases
             if creator == 'TLD':
                 creator = 'That Little Demon'
