@@ -1,6 +1,10 @@
 # Imp Tools
 A set of thread-reading and -parsing utilities for use with the SA Forums and 
-Imp Zone. 
+Imp Zone. Also, a web app that uses some of these utilities and others in
+order to populate and serve data from a Cloud Firestore database for use with
+Imp Zone Game Club, and to serve randomized flag image urls for use within
+the Imp Zone forum. For more details on the app, see the README within the /app
+directory.
 
 ## Setup: 
 - [Install python locally](
