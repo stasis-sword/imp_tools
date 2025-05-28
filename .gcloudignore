@@ -30,7 +30,6 @@ var/
 htmlcov/
 
 # Data
-data/flags/*
 data/trophies/*.json
 
 # Config

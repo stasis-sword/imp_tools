@@ -18,5 +18,6 @@ RUN if [ ! -f service_account.json ]; then \
 
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
+ENV PYTHONPATH=/app
 
-CMD ["python", "entrypoint.py"]
+CMD ["python", "app/entrypoint.py"]
