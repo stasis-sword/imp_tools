@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Redirect Test with Metadata</title>
+    <script>
+        function updateImageMetadata() {
+            const img = document.getElementById('randomFlag');
+            const url = new URL(img.src);
+            const metadata = url.searchParams.get('metadata');
+            if (metadata) {
+                try {
+                    const decodedMetadata = JSON.parse(decodeURIComponent(metadata));
+                    document.getElementById('metadataDisplay').textContent = 
+                        `Description: ${decodedMetadata.description}\n` +
+                        `Alt Text: ${decodedMetadata.alt_text}\n` +
+                        `Source: ${decodedMetadata.source}\n` +
+                        `Timestamp: ${decodedMetadata.timestamp}`;
+                } catch (e) {
+                    console.error('Error parsing metadata:', e);
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Random Flag Test with Metadata</h1>
+    <img id="randomFlag" 
+         src="/images/random-flag-with-metadata" 
+         alt="Random Flag"
+         onload="updateImageMetadata()">
+    <pre id="metadataDisplay"></pre>
+    <p>This image is loaded from the random flag endpoint with metadata as query parameters.</p>
+</body>
+</html> 

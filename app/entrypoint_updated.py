@@ -5,6 +5,8 @@ from flask import Flask, request, jsonify, redirect, make_response
 from waitress import serve
 from firebase_admin import auth
 from functools import wraps
+from google.auth import transport
+from google.oauth2 import id_token
 
 from lib.bundle_generator import BundleGenerator
 from lib.firebase_handler import FirebaseHandler
@@ -18,6 +20,11 @@ app = Flask(__name__)
 FLAG_HANDLER = FlagHandler()
 
 def verify_firebase_token(f):
+    """
+    Verify authentication token. Accepts both:
+    1. Firebase user ID tokens (for end-user authentication)
+    2. Google Identity Tokens (for service-to-service authentication)
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
@@ -25,14 +32,40 @@ def verify_firebase_token(f):
             return jsonify({'error': 'No valid token provided'}), 401
             
         token = auth_header.split('Bearer ')[1]
+        
+        # First, try to verify as Firebase user token (for backward compatibility)
         try:
-            # Verify the token
             decoded_token = auth.verify_id_token(token)
-            # Add the user info to the request context
             request.user = decoded_token
+            request.auth_type = 'firebase_user'
             return f(*args, **kwargs)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 401
+        except Exception as firebase_error:
+            # If Firebase verification fails, try as Google Identity Token (service-to-service)
+            try:
+                # Get the expected audience (Cloud Run service URL)
+                # For Cloud Run, the audience should be the service URL
+                expected_audience = os.environ.get('CLOUD_RUN_SERVICE_URL')
+                if not expected_audience:
+                    # Try to construct from request
+                    expected_audience = request.url_root.rstrip('/')
+                
+                # Verify the Identity Token
+                decoded_token = id_token.verify_token(
+                    token,
+                    transport.requests.Request(),
+                    audience=expected_audience
+                )
+                
+                # For service accounts, the token will have 'email' field
+                request.user = decoded_token
+                request.auth_type = 'service_account'
+                return f(*args, **kwargs)
+            except Exception as identity_error:
+                logger.warning(f"Token verification failed: Firebase error: {firebase_error}, Identity error: {identity_error}")
+                return jsonify({
+                    'error': 'Invalid authentication token',
+                    'details': 'Token must be either a Firebase user ID token or a Google Identity Token'
+                }), 401
     return decorated_function
 
 def generate_cacheless_redirect_response(redirect_url):
@@ -64,19 +97,6 @@ def generate_bundle():
         
         bundle_data = bundle_generator.generate_bundle(collection_path)
         
-        # # Decide whether to save file or return JSON based on the request
-        # if data.get('save_bundle', False):
-        #     output_dir = data.get('output_dir')
-        #     filepath = bundle_generator.save_bundle(bundle_data, collection_path, output_dir)
-        #     return jsonify({
-        #         'success': True,
-        #         'message': f'Bundle saved to {filepath}',
-        #         'filepath': filepath,
-        #         'bundle_name': collection_path.replace('/', '_'),
-        #         'size': len(str(bundle_data).encode('utf-8')),
-        #         'document_count': bundle_data["metadata"]["totalDocuments"]
-        #     }), 200
-        # else:
         return jsonify(bundle_data), 200
             
     except Exception as e:
