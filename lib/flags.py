@@ -107,6 +107,12 @@ class FlagHandler:
         Args: 
             new_flags (List[Flag]): List of flags to add to existing list
         """
+        # check if new flags are already in the list
+        for flag in new_flags:
+            if flag in self.flags:
+                logger.info(f'Flag {flag.name} already exists in list. Removing from new flags list...')
+                new_flags.remove(flag)
+
         combined_flags = self.flags + new_flags
         sorted_flags = self.sort_flags_by_name(combined_flags)
         self._flags = sorted_flags
@@ -202,7 +208,7 @@ class FlagHandler:
         the shape of the html in these tables changes, as it's predicated on class name.
         """
         # Current class name for Google Drive file name cells; change if necessary
-        FLAG_NAME_CELL_CLASS = 'tyTrke M3pype'
+        FLAG_NAME_CELL_CLASS = 'YMwAs MLwCse'
         try:
             with open(source_html_path, 'r', encoding="utf-8") as file:
                 html = file.read()
@@ -231,7 +237,9 @@ class FlagHandler:
         Returns:
             Flag object
         """
-        flag_name = cell.text
+        raw_cell_text = cell.text
+        # remove the first 5 characters ('Image') and last 6 characters ('Shared')
+        flag_name = raw_cell_text[5:-6]
         # standardized flag names follow format 'name - creator.png'
         name_components = flag_name.split(' - ')
         if len(name_components) == 2:

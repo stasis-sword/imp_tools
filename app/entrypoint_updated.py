@@ -42,44 +42,21 @@ def verify_firebase_token(f):
         except Exception as firebase_error:
             # If Firebase verification fails, try as Google Identity Token (service-to-service)
             try:
-                # Prefer explicit audience. Fall back to current service root URL.
-                host = request.host
-                forwarded_proto = request.headers.get('X-Forwarded-Proto')
-                # Cloud Run often terminates TLS upstream; Flask may see `http://...` even when the
-                # ID token audience was minted for `https://...`. Accept both schemes.
-                https_audience = f'https://{host}'
-                http_audience = f'http://{host}'
-                candidates = []
-
-                explicit = os.environ.get('CLOUD_RUN_SERVICE_URL')
-                if explicit:
-                    candidates.append(explicit.rstrip('/'))
-
-                if forwarded_proto:
-                    candidates.append(f'{forwarded_proto}://{host}')
-
-                candidates.extend([https_audience, http_audience])
-                # De-dupe while preserving order
-                candidates = list(dict.fromkeys([c.rstrip('/') for c in candidates if c]))
-
-                decoded_token = None
-                last_error = None
-                logger.info(f'Identity token audience candidates: {candidates}')
-                for aud in candidates:
-                    try:
-                        decoded_token = id_token.verify_token(
-                            token,
-                            transport.requests.Request(),
-                            audience=aud
-                        )
-                        break
-                    except Exception as e:
-                        last_error = e
-                        logger.info(f'Identity token verify failed for aud={aud}: {e}')
-
-                if decoded_token is None:
-                    raise last_error
+                # Get the expected audience (Cloud Run service URL)
+                # For Cloud Run, the audience should be the service URL
+                expected_audience = os.environ.get('CLOUD_RUN_SERVICE_URL')
+                if not expected_audience:
+                    # Try to construct from request
+                    expected_audience = request.url_root.rstrip('/')
                 
+                # Verify the Identity Token
+                decoded_token = id_token.verify_token(
+                    token,
+                    transport.requests.Request(),
+                    audience=expected_audience
+                )
+                
+                # For service accounts, the token will have 'email' field
                 request.user = decoded_token
                 request.auth_type = 'service_account'
                 return f(*args, **kwargs)
@@ -120,19 +97,6 @@ def generate_bundle():
         
         bundle_data = bundle_generator.generate_bundle(collection_path)
         
-        # # Decide whether to save file or return JSON based on the request
-        # if data.get('save_bundle', False):
-        #     output_dir = data.get('output_dir')
-        #     filepath = bundle_generator.save_bundle(bundle_data, collection_path, output_dir)
-        #     return jsonify({
-        #         'success': True,
-        #         'message': f'Bundle saved to {filepath}',
-        #         'filepath': filepath,
-        #         'bundle_name': collection_path.replace('/', '_'),
-        #         'size': len(str(bundle_data).encode('utf-8')),
-        #         'document_count': bundle_data["metadata"]["totalDocuments"]
-        #     }), 200
-        # else:
         return jsonify(bundle_data), 200
             
     except Exception as e:
