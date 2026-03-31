@@ -5,6 +5,8 @@ from flask import Flask, request, jsonify, redirect, make_response
 from waitress import serve
 from firebase_admin import auth
 from functools import wraps
+from google.auth import transport
+from google.oauth2 import id_token
 
 from lib.bundle_generator import BundleGenerator
 from lib.firebase_handler import FirebaseHandler
@@ -18,6 +20,11 @@ app = Flask(__name__)
 FLAG_HANDLER = FlagHandler()
 
 def verify_firebase_token(f):
+    """
+    Verify authentication token. Accepts both:
+    1. Firebase user ID tokens (for end-user authentication)
+    2. Google Identity Tokens (for service-to-service authentication)
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
@@ -25,14 +32,63 @@ def verify_firebase_token(f):
             return jsonify({'error': 'No valid token provided'}), 401
             
         token = auth_header.split('Bearer ')[1]
+        
+        # First, try to verify as Firebase user token (for backward compatibility)
         try:
-            # Verify the token
             decoded_token = auth.verify_id_token(token)
-            # Add the user info to the request context
             request.user = decoded_token
+            request.auth_type = 'firebase_user'
             return f(*args, **kwargs)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 401
+        except Exception as firebase_error:
+            # If Firebase verification fails, try as Google Identity Token (service-to-service)
+            try:
+                # Prefer explicit audience. Fall back to current service root URL.
+                host = request.host
+                forwarded_proto = request.headers.get('X-Forwarded-Proto')
+                # Cloud Run often terminates TLS upstream; Flask may see `http://...` even when the
+                # ID token audience was minted for `https://...`. Accept both schemes.
+                https_audience = f'https://{host}'
+                http_audience = f'http://{host}'
+                candidates = []
+
+                explicit = os.environ.get('CLOUD_RUN_SERVICE_URL')
+                if explicit:
+                    candidates.append(explicit.rstrip('/'))
+
+                if forwarded_proto:
+                    candidates.append(f'{forwarded_proto}://{host}')
+
+                candidates.extend([https_audience, http_audience])
+                # De-dupe while preserving order
+                candidates = list(dict.fromkeys([c.rstrip('/') for c in candidates if c]))
+
+                decoded_token = None
+                last_error = None
+                logger.info(f'Identity token audience candidates: {candidates}')
+                for aud in candidates:
+                    try:
+                        decoded_token = id_token.verify_token(
+                            token,
+                            transport.requests.Request(),
+                            audience=aud
+                        )
+                        break
+                    except Exception as e:
+                        last_error = e
+                        logger.info(f'Identity token verify failed for aud={aud}: {e}')
+
+                if decoded_token is None:
+                    raise last_error
+                
+                request.user = decoded_token
+                request.auth_type = 'service_account'
+                return f(*args, **kwargs)
+            except Exception as identity_error:
+                logger.warning(f"Token verification failed: Firebase error: {firebase_error}, Identity error: {identity_error}")
+                return jsonify({
+                    'error': 'Invalid authentication token',
+                    'details': 'Token must be either a Firebase user ID token or a Google Identity Token'
+                }), 401
     return decorated_function
 
 def generate_cacheless_redirect_response(redirect_url):
