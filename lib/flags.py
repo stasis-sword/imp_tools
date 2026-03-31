@@ -63,19 +63,6 @@ class FlagHandler:
 
         return encoded_url
 
-    def generate_signavatar_urls(self, flags: List[Flag]):
-        """Print a list of urls for the supplied flags, in groups of 3."""
-        printed = 0
-        while flags:
-            next_flag = flags.pop(0)
-            url = self.generate_flag_url(next_flag)
-            print(url)
-            printed += 1
-            if printed % 3 == 0:
-                print("--------------------------------")
-                printed = 0
-
-
     def get_random_flag_url(self, with_creator_metadata=False) -> str:
         """
         Get a random flag's redirect URL.
